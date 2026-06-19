@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../../core/Controller.php';
 require_once __DIR__ . '/../models/ArticleModel.php';
 require_once __DIR__ . '/../models/CategorieModel.php';
+require_once __DIR__ . '/../../core/Auth.php';  // ⬅️ AJOUTÉ
 
 class ArticleController extends Controller {
     private $articleModel;
@@ -12,11 +13,23 @@ class ArticleController extends Controller {
         $this->categorieModel = new CategorieModel();
     }
 
+    // ✅ PUBLIC
     public function index() {
-        $articles = $this->articleModel->findAll();
-        $this->render('articles/index', ['articles' => $articles]);
+        $page = $_GET['page'] ?? 1;
+        $perPage = 5;
+        $totalArticles = $this->articleModel->countAll();
+        $totalPages = ceil($totalArticles / $perPage);
+        
+        $articles = $this->articleModel->findAllPaginated($page, $perPage);
+        $this->render('articles/index', [
+            'articles' => $articles,
+            'page' => $page,
+            'totalPages' => $totalPages,
+            'totalArticles' => $totalArticles
+        ]);
     }
 
+    // ✅ PUBLIC
     public function show($id) {
         $article = $this->articleModel->findById($id);
         if (!$article) {
@@ -27,12 +40,16 @@ class ArticleController extends Controller {
         $this->render('articles/show', ['article' => $article]);
     }
 
+    // 🔒 PROTÉGÉ - Éditeur ou Admin
     public function create() {
+        Auth::requireEditeur();  // ⬅️ AJOUTÉ
         $categories = $this->categorieModel->findAll();
         $this->render('articles/create', ['categories' => $categories]);
     }
 
+    // 🔒 PROTÉGÉ - Éditeur ou Admin
     public function store() {
+        Auth::requireEditeur();  // ⬅️ AJOUTÉ
         $titre     = $_POST['titre'] ?? '';
         $contenu   = $_POST['contenu'] ?? '';
         $categorie = $_POST['categorie'] ?? '';
@@ -49,13 +66,17 @@ class ArticleController extends Controller {
         exit;
     }
 
+    // 🔒 PROTÉGÉ - Éditeur ou Admin
     public function edit($id) {
+        Auth::requireEditeur();  // ⬅️ AJOUTÉ
         $article    = $this->articleModel->findById($id);
         $categories = $this->categorieModel->findAll();
         $this->render('articles/edit', ['article' => $article, 'categories' => $categories]);
     }
 
+    // 🔒 PROTÉGÉ - Éditeur ou Admin
     public function update($id) {
+        Auth::requireEditeur();  // ⬅️ AJOUTÉ
         $titre     = $_POST['titre'] ?? '';
         $contenu   = $_POST['contenu'] ?? '';
         $categorie = $_POST['categorie'] ?? '';
@@ -65,23 +86,32 @@ class ArticleController extends Controller {
         exit;
     }
 
+    // 🔒 PROTÉGÉ - Éditeur ou Admin
     public function delete($id) {
+        Auth::requireEditeur();  // ⬅️ AJOUTÉ
         $this->articleModel->delete($id);
         header('Location: /articles');
         exit;
     }
 
-    // ⬇️⬇️⬇️ NOUVELLE MÉTHODE POUR FILTRER PAR CATÉGORIE ⬇️⬇️⬇️
+    // ✅ PUBLIC
     public function byCategorie($id) {
-        $articles = $this->articleModel->findByCategorie($id);
+        $page = $_GET['page'] ?? 1;
+        $perPage = 5;
+        $totalArticles = $this->articleModel->countByCategorie($id);
+        $totalPages = ceil($totalArticles / $perPage);
         
-        // Récupérer le nom de la catégorie pour l'afficher
+        $articles = $this->articleModel->findByCategoriePaginated($id, $page, $perPage);
+        
         $categorie = $this->categorieModel->findById($id);
         $titre_categorie = $categorie ? $categorie['libelle'] : 'Catégorie';
         
         $this->render('articles/index', [
             'articles' => $articles,
-            'titre_categorie' => $titre_categorie
+            'titre_categorie' => $titre_categorie,
+            'page' => $page,
+            'totalPages' => $totalPages,
+            'totalArticles' => $totalArticles
         ]);
     }
 }

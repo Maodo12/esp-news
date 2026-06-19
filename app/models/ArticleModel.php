@@ -18,6 +18,48 @@ class ArticleModel {
         return $stmt->fetchAll();
     }
 
+    // ⬇️⬇️⬇️ NOUVEAU : Pagination ⬇️⬇️⬇️
+    public function findAllPaginated($page = 1, $perPage = 5) {
+        $offset = ($page - 1) * $perPage;
+        $stmt = $this->pdo->prepare("
+            SELECT a.*, c.libelle as categorie_libelle
+            FROM Article a
+            LEFT JOIN Categorie c ON a.categorie = c.id
+            ORDER BY a.dateCreation DESC
+            LIMIT ? OFFSET ?
+        ");
+        $stmt->execute([$perPage, $offset]);
+        return $stmt->fetchAll();
+    }
+
+    // ⬇️⬇️⬇️ NOUVEAU : Compter les articles ⬇️⬇️⬇️
+    public function countAll() {
+        $stmt = $this->pdo->query("SELECT COUNT(*) FROM Article");
+        return $stmt->fetchColumn();
+    }
+
+    // ⬇️⬇️⬇️ NOUVEAU : Pagination par catégorie ⬇️⬇️⬇️
+    public function findByCategoriePaginated($categorieId, $page = 1, $perPage = 5) {
+        $offset = ($page - 1) * $perPage;
+        $stmt = $this->pdo->prepare("
+            SELECT a.*, c.libelle as categorie_libelle
+            FROM Article a
+            LEFT JOIN Categorie c ON a.categorie = c.id
+            WHERE a.categorie = ?
+            ORDER BY a.dateCreation DESC
+            LIMIT ? OFFSET ?
+        ");
+        $stmt->execute([$categorieId, $perPage, $offset]);
+        return $stmt->fetchAll();
+    }
+
+    // ⬇️⬇️⬇️ NOUVEAU : Compter les articles d'une catégorie ⬇️⬇️⬇️
+    public function countByCategorie($categorieId) {
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM Article WHERE categorie = ?");
+        $stmt->execute([$categorieId]);
+        return $stmt->fetchColumn();
+    }
+
     public function findById($id) {
         $stmt = $this->pdo->prepare("
             SELECT a.*, c.libelle as categorie_libelle
@@ -64,3 +106,4 @@ class ArticleModel {
         $stmt->execute([$id]);
     }
 }
+?>

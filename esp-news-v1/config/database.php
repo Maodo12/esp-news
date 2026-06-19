@@ -4,7 +4,8 @@ class Database {
     private $pdo;
 
     private function __construct() {
-        $dbPath = __DIR__ . '/../mglsi_news.db';
+        // Chemin ABSOLU vers la base (même fichier pour les deux versions)
+        $dbPath = 'C:/esp-news/mglsi_news.db';
         $this->pdo = new PDO('sqlite:' . $dbPath);
         $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
